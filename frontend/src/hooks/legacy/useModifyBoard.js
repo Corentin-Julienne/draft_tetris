@@ -20,10 +20,7 @@ const useModifyBoard = (width, height) => {
 		);
 	};
  
-	/* reset the board */
-	const resetBoard = () => {
-		setBoard(Array.from({ length: height }, () => Array(width).fill(0)));
-	};
+
 
 	return { board, updateCellColor, resetBoard };
 }

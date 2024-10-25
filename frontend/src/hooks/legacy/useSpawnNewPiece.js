@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import useModifyBoard from "./useModifyBoard";
-import { TETROMINOS } from "../utils/tetrominoes";
+import { TETROMINOS } from "../../utils/tetrominoes";
 
 const useSpawnNewPiece = (boardWidth, boardHeight, x, y, pieceType) => {
 
@@ -22,7 +22,7 @@ const useSpawnNewPiece = (boardWidth, boardHeight, x, y, pieceType) => {
 			updateCellColor(newX, newY, 1);
 		});
 
-	}, [pieceType, x, y]);
+	}, [pieceType, x, y, updateCellColor]);
 
 	return { board, resetBoard };
 };
