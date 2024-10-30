@@ -1,13 +1,19 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { TETROMINOS } from "../utils/tetrominoes";
 import { PIECES_COLOR_CODES } from "../utils/piecesColorCodes";
 import { PIECE_STARTING_ORIENTATIONS } from "../utils/pieceStartingOrientations";
+import { useDispatch, useSelector } from 'react-redux';
+import { setActivePiece, setActivePieceType, setPiecePosition, setOrientation, setGrid } from '../store/gameplaySlice';
 
-const useManagePiece = (width, height, setGrid) => {
+const useManagePiece = (width, height) => {
+	
+	const dispatch = useDispatch();
 
-	const [ activePiece, setActivePiece ] = useState(null);
-	const [ piecePosition, setPiecePosition ] = useState({x: 0, y: 0});
-	const [ rotation, setRotation ] = useState(0);
+	const grid = useSelector((state) => state.gameplay.grid);
+	const activePiece = useSelector((state) => state.gameplay.activePiece);
+	const activePieceType = useSelector((state) => state.gameplay.activePieceType);
+	const piecePosition = useSelector((state) => state.gameplay.piecePosition);
+	const orientation = useSelector((state) => state.gameplay.orientation);
 	
 	/* spawn an new piece */
 	const spawnNewPiece = (pieceType) => {
@@ -21,63 +27,69 @@ const useManagePiece = (width, height, setGrid) => {
 		const initialX = Math.floor(width / 2) - Math.floor(TETROMINOS[pieceType][0].length / 2);
 		const initialY = 0;
 		
-		setPiecePosition({x: initialX, y: initialY});
-		setActivePiece(piece);
-		setRotation(0);
-		updateGridWithPiece(piece[PIECE_STARTING_ORIENTATIONS[pieceType]], 
-			initialX, 
-			initialY, 
-			PIECES_COLOR_CODES[pieceType]);
+		dispatch(setPiecePosition({x: initialX, y: initialY}));
+		dispatch(setActivePiece(piece));
+		dispatch(setActivePieceType(pieceType));
+		dispatch(setOrientation(PIECE_STARTING_ORIENTATIONS[pieceType]));
 	}
 
 	/* general updater for the grid when there is a move */
 	const updateGridWithPiece = (shapeCoords, x, y, colorCode) => {
 		
 		if (!shapeCoords) return;
-		
-		console.log('shapecords = ', shapeCoords);
-		
-		setGrid((prevGrid) => {
-			const newGrid = prevGrid.map((row) => [...row]);
 
-			shapeCoords.forEach(([relY, relX]) => {
+		const newGrid = grid.map((row) => [...row]);
 
-				console.log('relX = ', relX, ' and relY = ', relY);
+		shapeCoords.forEach(([relY, relX]) => {
+			const newY = y + relY;
+			const newX = x + relX;
+			newGrid[newY][newX] = colorCode;
+		});
 
-				const newX = x + relX;
-				const newY = y + relY;
-
-				console.log('newX = ', newX, ' and newY = ', newY);
-				newGrid[newY][newX] = colorCode;
-			});
-
-			return newGrid;
-		})
+		dispatch(setGrid(newGrid));
 	};
 
 	/* used to removed the piece when producing a move, to later display the piece in new position */
-	const removePiece = (prevPos) => {
-		setGrid((prevGrid) => {
-			const newGrid = prevGrid.map((row) => [...row]);
+	const removePiece = () => {
+		const newGrid = grid.map((row) => [...row]);
 
-			activePiece[rotation].forEach(([relY, relX]) => {
-				const oldX = prevPos.x + relX;
-				const oldY = prevPos.y + relY;
+		if (activePiece) {
+			activePiece[orientation].forEach(([relY, relX]) => {
+				const oldY = piecePosition.y + relY;
+				const oldX = piecePosition.x + relX;
 				newGrid[oldY][oldX] = 0;
-			})
-			
-			return newGrid;
-		});
+			})	
+		}
+		dispatch(setGrid(newGrid));
 	}
 	
 	/* rotate piece, left direction */
-	const rotatePieceLeft = () => {
+	const rotatePiece = () => {
+		if (!activePiece) {
+			return;
+		}
+		removePiece();
 
+		const newOrientation = (orientation + 90) % 360;
+	
+		dispatch(setOrientation(newOrientation));
 	}
 
 	/* rotate piece, right direction */
-	const rotatePieceRight = () => {
+	const movePieceRight = () => {
+		if (!activePiece) {
+			return;
+		}
+		removePiece();
+		dispatch(setPiecePosition({ x: piecePosition.x + 1, y: piecePosition.y}));
+	}
 
+	const movePieceLeft = () => {
+		if (!activePiece) {
+			return;
+		}
+		removePiece();
+		dispatch(setPiecePosition({ x: piecePosition.x - 1, y: piecePosition.y}));
 	}
 
 	/* move piece down */
@@ -85,22 +97,23 @@ const useManagePiece = (width, height, setGrid) => {
 		if (!activePiece) {
 			return;
 		}
-		
-		setPiecePosition((prevPos) => {
-			const newY = prevPos.y + 1;
-
-			removePiece(prevPos);
-
-			updateGridWithPiece(activePiece[rotation], 
-				prevPos.x, 
-				newY, 
-				PIECES_COLOR_CODES[activePiece.type]);
-
-			return {...prevPos, y: newY};
-		});
+		removePiece();
+		dispatch(setPiecePosition({ x: piecePosition.x, y: piecePosition.y + 1 }));
 	}
 
-	return {spawnNewPiece, rotatePieceLeft, rotatePieceRight, movePieceDown};
+	/* update grid when a parameter changes */
+	useEffect(() => {
+		if (activePiece && activePieceType && piecePosition && orientation !== null) {
+			updateGridWithPiece(
+				activePiece[orientation],
+				piecePosition.x,
+				piecePosition.y,
+				PIECES_COLOR_CODES[activePieceType]
+			);
+		}		
+	}, [activePiece, activePieceType, piecePosition, orientation]);
+
+	return {spawnNewPiece, rotatePiece, movePieceRight, movePieceLeft, movePieceDown};
 }
 
 export default useManagePiece;

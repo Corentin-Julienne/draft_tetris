@@ -1,17 +1,16 @@
-import { useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import useManagePiece from "./useManagePiece";
+import { useDispatch, useSelector } from 'react-redux';
+import { resetGrid } from '../store/gameplaySlice';
 
 const useModifyGrid = ( width, height ) => {
 
-	/* initialized the board at launch */
-	const initialGrid = Array.from({ length: height }, () =>
-		Array(width).fill(0)
-	);
-	const [ grid, setGrid ] = useState(initialGrid);
+	const dispatch = useDispatch();
+	const grid = useSelector((state) => state.gameplay.grid);
 
 	/* delegate piece management to specialized hook */
-	const { spawnNewPiece, rotatePieceLeft, rotatePieceRight, movePieceDown } 
-	= useManagePiece(width, height, setGrid);
+	const { spawnNewPiece, movePieceLeft, movePieceRight, rotatePiece, movePieceDown } 
+	= useManagePiece(width, height);
 
 	/* used to spawn a new piece form a button (dev feature only) */
 	const addPieceToGrid = (pieceType) => {
@@ -20,18 +19,21 @@ const useModifyGrid = ( width, height ) => {
 
 	/* reset the grid (dev feature only, to be removed) */
 	const resetGrid = () => {
-		setGrid(Array.from({ length: height }, () => Array(width).fill(0)));
+		dispatch(resetGrid());
 	};
 
 	/* player inputs manager */
 	useEffect(() => {
 		const handleKeyDown = (event) => {
 			switch (event.key) {
+				case "ArrowUp":
+					rotatePiece();
+					break;
 				case "ArrowLeft":
-					rotatePieceLeft();
+					movePieceLeft();
 					break;
 				case "ArrowRight": 
-					rotatePieceRight();
+					movePieceRight();
 					break;
 				case "ArrowDown":
 					movePieceDown();
@@ -46,17 +48,24 @@ const useModifyGrid = ( width, height ) => {
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		}
-	}, [rotatePieceLeft, rotatePieceRight, movePieceDown]);
+	}, [movePieceLeft, movePieceRight, rotatePiece, movePieceDown]);
 
 	/* gravity manager */
-	useEffect(() => {
-		const interval = setInterval(() => {
-			movePieceDown();
-		}, 1000);
+	const applyGravityRef = useRef(() => {
+		movePieceDown();
+	});
 
-		return () => clearInterval(interval);
+	useEffect(() => {
+		applyGravityRef.current = movePieceDown;
 	}, [movePieceDown]);
 
+	useEffect(() => {
+		const interval = setInterval(() => {
+			applyGravityRef.current();
+		}, 500);
+
+		return () => clearInterval(interval);
+	}, []);
 	
 	return { grid, addPieceToGrid, resetGrid };
 }
