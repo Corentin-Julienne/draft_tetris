@@ -8,6 +8,10 @@ const gameplaySlice = createSlice({
 		activePieceType: null, /* letter of the piece */
 		piecePosition: { x: 0, y: 0 },
 		orientation: 0,
+		isInContact: false,
+		isGameOver: false,
+		rank: 0,
+		score: 0,
 	},
 	reducers: {
 		setGrid: (state, action) => {
@@ -27,7 +31,19 @@ const gameplaySlice = createSlice({
 		},
 		setOrientation: (state, action) => {
 			state.orientation = action.payload;
-		}
+		},
+		setIsInContact: (state, action) => {
+			state.isInContact = action.payload;
+		},
+		setIsGameOver: (state, action) => {
+			state.isGameOver = action.payload;
+		},
+		setRank: (state, action) => {
+			state.rank = action.payload;
+		},
+		setScore: (state,action) => {
+			state.score = action.payload;
+		},
 	}
 })
 
@@ -38,5 +54,9 @@ export const {
 	setActivePieceType,
 	setPiecePosition, 
 	setOrientation,
+	setIsInContact,
+	setIsGameOver,
+	setRank,
+	setScore,
 } = gameplaySlice.actions;
 export default gameplaySlice.reducer;

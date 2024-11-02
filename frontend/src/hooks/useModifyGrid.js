@@ -1,26 +1,32 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import useManagePiece from "./useManagePiece";
-import { useDispatch, useSelector } from 'react-redux';
-import { resetGrid } from '../store/gameplaySlice';
+import useManageLines from "./useManageLines";
+import { useSelector, useDispatch } from 'react-redux';
+import { setActivePiece } from "../store/gameplaySlice";
 
-const useModifyGrid = ( width, height ) => {
+const useModifyGrid = (width, height) => {
 
 	const dispatch = useDispatch();
+	
 	const grid = useSelector((state) => state.gameplay.grid);
+	const activePiece = useSelector((state) => state.gameplay.activePiece);
+	const isGameOver = useSelector((state) => state.gameplay.isGameOver);
+
+	const [isInContact, setIsInContact ] = useState(false);
 
 	/* delegate piece management to specialized hook */
 	const { spawnNewPiece, movePieceLeft, movePieceRight, rotatePiece, movePieceDown } 
 	= useManagePiece(width, height);
 
-	/* used to spawn a new piece form a button (dev feature only) */
-	const addPieceToGrid = (pieceType) => {
-		spawnNewPiece(pieceType);
-	}
+	/* delegate line suppression and add unbreakble malus line when opponent player scores */
+	const {clearFullLines, addUnbreakableMalusLine } = useManageLines(width, height);
 
-	/* reset the grid (dev feature only, to be removed) */
-	const resetGrid = () => {
-		dispatch(resetGrid());
-	};
+	/* spawn the pieces, at launch and everytime activePiece is resetted to null */
+	useEffect(() => {
+		if (!activePiece && !isGameOver) {
+			spawnNewPiece();
+		}
+	}, [activePiece, spawnNewPiece, isGameOver]);
 
 	/* player inputs manager */
 	useEffect(() => {
@@ -38,6 +44,9 @@ const useModifyGrid = ( width, height ) => {
 				case "ArrowDown":
 					movePieceDown();
 					break;
+				case " ": /* for the spacebar */
+					console.log('space bar pressed');
+					break;
 				default:
 					break;
 			}
@@ -51,13 +60,24 @@ const useModifyGrid = ( width, height ) => {
 	}, [movePieceLeft, movePieceRight, rotatePiece, movePieceDown]);
 
 	/* gravity manager */
-	const applyGravityRef = useRef(() => {
-		movePieceDown();
-	});
+	const applyGravityRef = useRef(null);
 
 	useEffect(() => {
-		applyGravityRef.current = movePieceDown;
-	}, [movePieceDown]);
+		applyGravityRef.current = () => {
+			const pieceCanFall = movePieceDown();
+
+			if (pieceCanFall) {
+				setIsInContact(false);
+			} else {
+				if (isInContact) {
+					clearFullLines();
+					dispatch(setActivePiece(false));
+				} else {
+					setIsInContact(true);
+				}
+			}
+		};
+	}, [dispatch, movePieceDown, isInContact, clearFullLines]);
 
 	useEffect(() => {
 		const interval = setInterval(() => {
@@ -66,8 +86,16 @@ const useModifyGrid = ( width, height ) => {
 
 		return () => clearInterval(interval);
 	}, []);
+
+	/* game over manager */
+	useEffect(() => {
+		if (isGameOver) {
+			console.log('game over');
+			// pause the bloody game and handle the rest
+		}
+	}, [isGameOver]);
 	
-	return { grid, addPieceToGrid, resetGrid };
+	return grid;
 }
 
 export default useModifyGrid;

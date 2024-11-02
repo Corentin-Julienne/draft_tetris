@@ -34,6 +34,7 @@ const Home = () => {
 		width: '100%',
 		height: '100%',
 		gridRow: '1 / 2',
+		border: '2px solid red',
 	}
 
 	const opponentBoardsContainerStyle = {

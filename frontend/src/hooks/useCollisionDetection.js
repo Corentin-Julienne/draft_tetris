@@ -1,25 +1,33 @@
-import { useSelector } from "react-redux";
 import { useCallback } from "react";
 
-const useCollisionDetection = (width, height) => {
+const useCollisionDetection = (width, height, grid) => {
 
-	const grid = useSelector((state) => state.gameplay.grid);
-
-	const isOutOfBound = (x, y) => {
+	const isOutOfBound = (x, y) => { 
 		return x < 0 || x >= width || y >= height;
 	}
 
-	const isOccupied = (x, y) => {
-		return grid[y] && grid[y][x] !== 0; 
+	const getGridWithoutCurrentPiece = (piece, x, y, orientation) => {
+		const shapeCoords = piece[orientation];
+
+		const currentGridWithoutPiece = grid.map((row) => [...row]);
+		shapeCoords.forEach(([relY, relX]) => {
+			const currentX = x + relX;
+			const currentY = y + relY;
+			if (currentY >= 0 && currentY < height && currentX >= 0 && currentX < width) {
+				currentGridWithoutPiece[currentY][currentX] = 0;
+			}
+		});
+
+		return currentGridWithoutPiece;
 	}
 
-	const checkCollision = (piece, x, y, orientation) => {
+	const checkCollision = (piece, x, y, orientation, gridWithoutCurrentPiece) => {		
 		const shapeCoords = piece[orientation];
 
 		for (let [relY, relX] of shapeCoords) {
 			const newX = x + relX;
 			const newY = y + relY;
-			if (isOutOfBound(newX, newY) || isOccupied(newX, newY)) {
+			if (isOutOfBound(newX, newY) || gridWithoutCurrentPiece[newY][newX] !== 0) {
 				return true;
 			}
 		}
@@ -27,19 +35,27 @@ const useCollisionDetection = (width, height) => {
 	}
 
 	const canMoveDown = useCallback((piece,x, y, orientation) => {
-		return !checkCollision(piece, x, y + 1, orientation);
+		const gridWithoutCurrentPiece = getGridWithoutCurrentPiece(piece, x, y, orientation);
+		
+		return !checkCollision(piece, x, y + 1, orientation, gridWithoutCurrentPiece);
 	}, [grid, width, height]);
 
 	const canMoveLeft = useCallback((piece, x, y, orientation) => {
-		return !checkCollision(piece, x - 1, y, orientation);
+		const gridWithoutCurrentPiece = getGridWithoutCurrentPiece(piece, x, y, orientation);
+		
+		return !checkCollision(piece, x - 1, y, orientation, gridWithoutCurrentPiece);
 	}, [grid, width, height]);
 
 	const canMoveRight = useCallback((piece, x, y, orientation) => {
-		return !checkCollision(piece, x + 1, y ,orientation);
+		const gridWithoutCurrentPiece = getGridWithoutCurrentPiece(piece, x, y, orientation);
+		
+		return !checkCollision(piece, x + 1, y ,orientation, gridWithoutCurrentPiece);
 	}, [grid, width, height]);
 
-	const canRotate = useCallback((piece, x, y, newOrientation) => {
-		return !checkCollision(piece, x, y, newOrientation);
+	const canRotate = useCallback((piece, x, y, orientation, newOrientation) => {
+		const gridWithoutCurrentPiece = getGridWithoutCurrentPiece(piece, x, y, orientation);
+		
+		return !checkCollision(piece, x, y, newOrientation, gridWithoutCurrentPiece);
 	}, [grid, width, height]);
 
 	return { canMoveDown, canMoveLeft, canMoveRight, canRotate };

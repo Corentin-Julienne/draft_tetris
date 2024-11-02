@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import useModifyGrid from "../hooks/useModifyGrid";
 import Cell from "./Cell";
 
@@ -14,7 +14,7 @@ const Board = () => {
 	const BOARD_WIDTH_PIXELS = BOARD_WIDTH * CELL_WIDTH;
 	const BOARD_HEIGHT_PIXELS = BOARD_HEIGHT * CELL_HEIGHT;
 
-	const { grid, addPieceToGrid, resetGrid } = useModifyGrid(BOARD_WIDTH, BOARD_HEIGHT);
+	const grid = useModifyGrid(BOARD_WIDTH, BOARD_HEIGHT);
 	
 	const boardContainerStyle = {
 		width: '100%',
@@ -42,9 +42,6 @@ const Board = () => {
           			))
         		)}
 			</div>
-			{/* Button to spawn a new piece */}
-			<button onClick={() => addPieceToGrid("I")}>Spawn "I" Piece</button>
-      		<button onClick={resetGrid}>Reset Board</button>
 		</div>
 	)
 }

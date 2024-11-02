@@ -32,6 +32,7 @@ const NewPiece = () => {
 		display: 'grid',
 		gridTemplateRows: `repeat(${NEW_PIECE_HEIGHT}, 1fr)`,
 		gridTemplateColumns: `repeat(${NEW_PIECE_WIDTH}, 1fr)`,
+		border: '2px solid teal',
 	}
 
 	const newPieceStyle = {
@@ -46,7 +47,7 @@ const NewPiece = () => {
 			<div style={newPieceBoardStyle}>
 				{board.map((row, rowIndex) => 
 					row.map((cell, cellIndex) => 
-						<Cell key={`${rowIndex}-${cellIndex}`} color={cell === 0 ? 'black' : 'blue'}/>)
+						<Cell key={`${rowIndex}-${cellIndex}`} color={cell}/>)
 				)}
 			</div>
 		</div>
